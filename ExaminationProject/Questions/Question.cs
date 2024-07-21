@@ -50,5 +50,22 @@ namespace ExaminationProject.Questions
 
         #endregion
 
+        #region Methods
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Body);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if(obj is Question question)
+                return Body.Equals(question?.Body);
+
+            return false;
+        }
+
+        #endregion
+
     }
 }

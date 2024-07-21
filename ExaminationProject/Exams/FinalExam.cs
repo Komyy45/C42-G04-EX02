@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Quic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using ExaminationProject.Answers;
 using ExaminationProject.Questions;
+using ExaminationProject.UserInteractionServices;
 using ExaminationProject.Validation;
 
 namespace ExaminationProject.Exams
@@ -40,43 +42,26 @@ namespace ExaminationProject.Exams
                 string Type;
                 do
                 {
-                    Console.WriteLine("Please, Enter the Type of Your Question: ");
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine("(1) MCQ \n(2) True or False");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    UserInteractionService.ShowMessageLine("Please, Enter the Type of Your Question: ");
 
-                    Type = Console.ReadLine()?.Trim() ?? string.Empty;
+                    UserInteractionService.ShowMessage("(1) MCQ\t(2) True or False \n ------> ", ConsoleColor.DarkYellow);
+
+                    Type = UserInteractionService.TakeInput();
 
                     if (Type != string.Empty && char.IsLetter(Type[0]))
                         Type = string.Join("", Type.Split(' '));
-
                 }
-                while (!Enum.TryParse(Type, true, out questionType) || questionType == 0 || (byte)questionType > Enum.GetNames<QuestionType>().Length);
+                while (!Enum.TryParse(Type, true, out questionType) || questionType == 0 || Validator.IsExcedingBoundary(Enum.GetNames<QuestionType>(), (int)questionType));
 
-                string Header;
-                do
-                {
-                    Console.Write("Please, Enter the Header of the Question: ");
-                    Header = Console.ReadLine() ?? string.Empty;
-                }
-                while (Header == string.Empty || !Validator.IsNotNumbersOnly(Header));
+                string Header = GetQuestionHeader();
 
-                string Body;
-                do
-                {
-                    Console.Write("Please, Enter the Body of the Question: ");
-                    Body = Console.ReadLine() ?? string.Empty;
-                }
-                while (Body == string.Empty || !Validator.IsNotNumbersOnly(Body));
+                string Body = GetQuestionBody();
 
-                decimal Mark;
-                do
-                {
-                    Console.Write("Please, Enter the Mark of the Question: ");
-                }
-                while (!decimal.TryParse(Console.ReadLine(), out Mark) || Mark <= 0);
+                decimal Mark = GetQuestionMark();
+
                 Total += Mark;
 
+                // Creates a question according to the Type User had Chosen
                 switch (questionType)
                 {
                     case QuestionType.Mcq:
@@ -91,14 +76,22 @@ namespace ExaminationProject.Exams
                         uint correctAnswer;
                         do
                         {
-                            Console.Write("Please, Enter the number of the Correct answer (1) True (2) False : ");
+                            UserInteractionService.ShowMessage("Please, Enter the number of the Correct answer (1) True (2) False : ", ConsoleColor.DarkYellow);
                         }
-                        while (!uint.TryParse(Console.ReadLine(), out correctAnswer) || correctAnswer == 0 || correctAnswer > 2);
+                        while (!uint.TryParse(UserInteractionService.TakeInput(ConsoleColor.Green), out correctAnswer) || correctAnswer == 0 || correctAnswer > 2);
                         questions[i].CorrectAnswer = correctAnswer;
                         break;
                     default:
-                        Console.WriteLine("Not Valid Type of Question!");
-                        break;
+                        UserInteractionService.ShowMessageLine("Not Valid Type of Question!", ConsoleColor.Red);
+                    break;
+                }
+
+                // Checks if the Question exists before
+                if (Validator.IsInstanceRepeated(questions, i))
+                {
+                    UserInteractionService.ShowMessageLine("This Question has been Added Already in this Exam!", ConsoleColor.Red);
+                    Thread.Sleep(1500);
+                    i--;
                 }
             }
         }
@@ -114,23 +107,17 @@ namespace ExaminationProject.Exams
             {
 
                 Console.Clear();
-                Console.WriteLine(question);
+                UserInteractionService.ShowMessageLine(question, ConsoleColor.DarkYellow);
                 uint Answer;
                 do
                 {
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.Write("Choose the Correct Answer:  ");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    UserInteractionService.ShowMessage("Choose the Correct Answer:  ", ConsoleColor.Green);
                 } 
-                while (!uint.TryParse(Console.ReadLine(), out Answer) || Answer == 0 || Answer > question.NumberOfAnswers);
+                while (!uint.TryParse(UserInteractionService.TakeInput(), out Answer) || Answer == 0 || Answer > question.NumberOfAnswers);
 
                 if (new TimeOnly(stopwatch.ElapsedTicks) >= ExamTime)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\n----------------------------\n");
-                    Console.WriteLine("You have Runned out of time!");
-                    Console.WriteLine("\n----------------------------\n");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    UserInteractionService.ShowMessage("\n----------------------------\nYou have Runned out of time!\n----------------------------\n", ConsoleColor.Red);
                     ShowModelAnswer();
                     ShowGrade(MyGrade);
                     return;
@@ -142,47 +129,32 @@ namespace ExaminationProject.Exams
             Console.Clear();
 
             ShowModelAnswer();
-
             ShowGrade(MyGrade);
 
-            Console.WriteLine($"Time Taken: {stopwatch.Elapsed}");
-            Console.Write($"\n----------------- Good Job :) -----------------\n");
+            DisplayEndMessage(stopwatch);
         }
 
         /// Shows Your Grade in the exam
         public void ShowGrade(decimal MyGrade)
         {
-            Console.Write("Your Grade: ");
+            UserInteractionService.ShowMessage("Your Grade: ");
             if (MyGrade < Total * 0.5m)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Write(MyGrade);
-                Console.ForegroundColor = ConsoleColor.White;
-            }
+                UserInteractionService.ShowMessage(MyGrade, ConsoleColor.Red);
             else if(MyGrade < Total * 0.75m)
-            {
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.Write(MyGrade);
-                Console.ForegroundColor = ConsoleColor.White;
-            }
+                UserInteractionService.ShowMessage(MyGrade, ConsoleColor.DarkYellow);
             else
-            {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write(MyGrade);
-                Console.ForegroundColor = ConsoleColor.White;
-            }
-                Console.WriteLine($"/{ Total}");
-            }
+                UserInteractionService.ShowMessage(MyGrade, ConsoleColor.Green);
+
+            UserInteractionService.ShowMessageLine($"/{Total}");
+        }
 
         /// Shows Every Question With it's Correct Answer Underneath
         public override void ShowModelAnswer()
         {
             for (int i = 0; i < questions.Length; i++)
             {
-                Console.WriteLine(questions[i]);
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"Correct Ansewer: ({questions[i].CorrectAnswer}) {questions[i][questions[i].CorrectAnswer - 1]}");
-                Console.ForegroundColor = ConsoleColor.White;
+                UserInteractionService.ShowMessageLine(questions[i]);
+                UserInteractionService.ShowMessageLine($"Correct Ansewer: ({questions[i].CorrectAnswer}) {questions[i][questions[i].CorrectAnswer - 1]}\n", ConsoleColor.Green);
             }
         }
 

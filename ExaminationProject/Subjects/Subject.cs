@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using ExaminationProject.Answers;
 using ExaminationProject.Exams;
 using ExaminationProject.Questions;
+using ExaminationProject.UserInteractionServices;
 using ExaminationProject.Validation;
 
 namespace ExaminationProject.Subjects
@@ -44,46 +45,35 @@ namespace ExaminationProject.Subjects
 
         #region Methods
 
-        /// Creates PracticalExam or FinalExam
+        /// Creates an Exam instance according to user's Choise
         public void CreateExam()
         {
             string Name;
             do
             {
-                Console.ForegroundColor = ConsoleColor.Blue;
-                Console.Write("Please, Enter the name of the Subject: ");
-                Console.ForegroundColor = ConsoleColor.White;
-
-                Name = Console.ReadLine() ?? string.Empty;
+                UserInteractionService.ShowMessage("Please, Enter the name of the Subject: ", ConsoleColor.Green);
+                Name = UserInteractionService.TakeInput();
             } while (Name == string.Empty ||  !Validator.IsNotNumbersOnly(Name));
 
             ushort NumberOfQuestions;
             do
             {
-                Console.ForegroundColor = ConsoleColor.Blue;
-                Console.Write("Please, Enter Number of Questions: ");
-                Console.ForegroundColor = ConsoleColor.White;
-
-            } while (!ushort.TryParse(Console.ReadLine(), out NumberOfQuestions) || NumberOfQuestions == 0);
+                UserInteractionService.ShowMessage("Please, Enter Number of Questions: ", ConsoleColor.Green);
+            } while (!ushort.TryParse(UserInteractionService.TakeInput(), out NumberOfQuestions) || NumberOfQuestions == 0);
 
             uint Duration;
             do
             {
-                Console.ForegroundColor = ConsoleColor.Blue;
-                Console.Write("Please, Enter the Duration of the Exam in minutes: ");
-                Console.ForegroundColor = ConsoleColor.White;
-
-            } while (!uint.TryParse(Console.ReadLine(), out Duration) || Duration == 0);
-
-
+                UserInteractionService.ShowMessage("Please, Enter the Duration of the Exam in minutes: ", ConsoleColor.Green);
+            } while (!uint.TryParse(UserInteractionService.TakeInput(), out Duration) || Duration == 0);
 
 
             ExamType examType;
             string enteredType;
             do
             {
-                Console.WriteLine("Please, Enter the of the Exam: \n1) Practical Exam \n2) Final Exam");
-                enteredType = Console.ReadLine() ?? string.Empty;
+                UserInteractionService.ShowMessageLine("Please, Enter the of the Exam: \n1) Practical Exam \n2) Final Exam");
+                enteredType = UserInteractionService.TakeInput();
 
                 if (enteredType.Length > 0 && char.IsLetter(enteredType[0]))
                     enteredType = string.Join("", enteredType.Split(" "));
@@ -103,7 +93,7 @@ namespace ExaminationProject.Subjects
                     exam.CreateQuestions();
                     break;
                 default:
-                    Console.WriteLine("Invalid Exam Type!");
+                    UserInteractionService.ShowMessageLine("Invalid Exam Type!" , ConsoleColor.Red);
                     return;
             }
             ExamType = examType;

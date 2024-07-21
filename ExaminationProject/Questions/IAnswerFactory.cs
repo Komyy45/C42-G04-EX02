@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ExaminationProject.Questions
 {
-    interface IMcqQuestion
+    interface IAnswerFactory
     {
         public void CreateAnswers();
     }

@@ -4,17 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ExaminationProject.Answers;
+using ExaminationProject.UserInteractionServices;
 using ExaminationProject.Validation;
 
 namespace ExaminationProject.Questions
 {
-    class McqQuestion : Question , IMcqQuestion
+    class McqQuestion : Question , IAnswerFactory
     {
         #region Constructors
 
         public McqQuestion(string Header, string Body, decimal Mark) : base(Header, Body, Mark, new Answer[4])
         {
-
         }
 
         #endregion
@@ -29,28 +29,28 @@ namespace ExaminationProject.Questions
                 string answerText;
                 do
                 {
-                    Console.Write($"Please, Enter the Answer number {i + 1}: ");
-                    answerText = Console.ReadLine()?.Trim() ?? string.Empty;
+                    UserInteractionService.ShowMessage($"Please, Enter the Answer number {i + 1}: ", ConsoleColor.DarkYellow);
+                    answerText = UserInteractionService.TakeInput();
 
                 }
                 while (answerText == string.Empty);
                 answers[i] = new Answer(answerText);
 
-                // Checks if this answer exists 
-                for (int j = 0; j < i; j++)
-                    if (answers[i].Equals(answers[j]))
-                    {
-                        i--;
-                        break;
-                    }
+                // Checks if this answer exists before in the Same Question
+                if (Validator.IsInstanceRepeated(answers, i))
+                {
+                    UserInteractionService.ShowMessageLine("This Answer has been Added Already in this Question!", ConsoleColor.Red);
+                    Thread.Sleep(1500);
+                    i--;
+                }
             }
 
             // Take Answer from User
             byte correctAnswer;
             do
             {
-                Console.Write("Please, Enter the number of the correct answer: ");
-            } while (!byte.TryParse(Console.ReadLine(), out correctAnswer) || correctAnswer > answers.Length || correctAnswer == 0);
+                UserInteractionService.ShowMessage("Please, Enter the number of the correct answer: ");
+            } while (!byte.TryParse(UserInteractionService.TakeInput(), out correctAnswer) || correctAnswer > answers.Length || correctAnswer == 0);
 
             CorrectAnswer = correctAnswer;
         }
